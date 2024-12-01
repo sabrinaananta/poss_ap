@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:posproject/LocalDb.dart'; // Import the LocalDb file
+import 'package:posproject/LocalDb.dart';
+import 'package:posproject/pages/CartPage.dart';
 
 class DetailPage extends StatefulWidget {
   @override
@@ -10,11 +11,14 @@ class _DetailPageState extends State<DetailPage> {
   final LocalDatabase _localDatabase = LocalDatabase();
   late Future<List<Map<String, dynamic>>> _orderDetails;
 
-  // Variables to hold the selected values
+  // Variabel untuk pilihan opsi
   String? _selectedSize;
   String? _selectedSweetness;
   String? _selectedIceCube;
   List<String> _selectedToppings = [];
+
+  // Variabel quantity
+  int _quantity = 1;
 
   @override
   void initState() {
@@ -22,23 +26,38 @@ class _DetailPageState extends State<DetailPage> {
     _orderDetails = _localDatabase.fetchOrderDetails();
   }
 
+  // Fungsi untuk memeriksa apakah semua opsi wajib sudah dipilih
+  bool _areMandatoryOptionsSelected() {
+    return _selectedSize != null && _selectedSweetness != null && _selectedIceCube != null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: Text('Detail'),
-  centerTitle: true,
-  actions: [
-    IconButton(
-      icon: Icon(Icons.shopping_cart),
-      onPressed: () {
-        
-      },
-    ),
-  ],
-),
-
-      body: FutureBuilder<List<Map<String, dynamic>>>( 
+        title: Text(
+          'Detail',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.blue, // Mengatur background menjadi biru
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CartPage()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _orderDetails,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -55,33 +74,124 @@ class _DetailPageState extends State<DetailPage> {
 
           final orderDetails = snapshot.data!;
 
-          // Urutan prioritas kategori
+          // Urutan penempatan kategori
           final priorityOrder = ['Size', 'Sweetness', 'Ice Cube', 'Topping'];
 
-          // Sort kategori berdasarkan urutan prioritas
+          // Tampilannya sesuai priority ordernya
           orderDetails.sort((a, b) {
             final aIndex = priorityOrder.indexOf(a['category']);
             final bIndex = priorityOrder.indexOf(b['category']);
             return aIndex.compareTo(bIndex);
           });
 
-          // Group categories by name to avoid repeating
+          // Dikelompokkan untuk menghindari perulangan banyak
           final groupedCategories = groupCategories(orderDetails);
 
-          return ListView.builder(
-            itemCount: groupedCategories.length,
-            itemBuilder: (context, index) {
-              final category = groupedCategories[index];
-              final categoryName = category['category'];
-              final choices = category['choices'];
-              final isMandatory = category['mandatory'] ?? false;
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: groupedCategories.length,
+                  itemBuilder: (context, index) {
+                    final category = groupedCategories[index];
+                    final categoryName = category['category'];
+                    final choices = category['choices'];
+                    final isMandatory = category['mandatory'] ?? false;
 
-              // Label "Wajib" atau "Optional"
-              String label = isMandatory ? "Wajib" : "Optional";
+                    // Label untuk wajib dan opsionalnya
+                    String label = isMandatory ? "Wajib" : "Optional";
 
-              // Gunakan fungsi buildCategory untuk menghindari pengulangan
-              return _buildCategory(categoryName, choices, label);
-            },
+                    // Fungsi buildCategory untuk menghindari perulangan
+                    return _buildCategory(categoryName, choices, label);
+                  },
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Quantity section
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.remove, color: Colors.white),
+                            onPressed: () {
+                              setState(() {
+                                if (_quantity > 1) {
+                                  _quantity--;
+                                }
+                              });
+                            },
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          '$_quantity',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        // Tombol +
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.add, color: Colors.white),
+                            onPressed: () {
+                              setState(() {
+                                _quantity++;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Tombol harga dengan warna yang berubah berdasarkan status pilihan
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _areMandatoryOptionsSelected()
+                            ? Colors.blue
+                            : Colors.grey, // Ganti warna tombol berdasarkan status
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      onPressed: _areMandatoryOptionsSelected()
+                          ? () {
+                              // Penempatan fungsi totalnya nanti
+                            }
+                          : null, // Tombol tidak bisa ditekan jika belum lengkap
+                      child: Text(
+                        'Rp 24.000', // Contoh harga
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -105,7 +215,7 @@ class _DetailPageState extends State<DetailPage> {
     return groupedCategories;
   }
 
-  // Fungsi untuk membangun kategori radio dan checkbox
+  // Fungsi untuk membangun kategori dengan radio dan checkbox
   Widget _buildCategory(String categoryName, List choices, String label) {
     bool isRadioCategory = categoryName == "Size" ||
         categoryName == "Sweetness" ||
@@ -117,90 +227,73 @@ class _DetailPageState extends State<DetailPage> {
       return _buildCheckboxCategory(categoryName, choices, label);
     }
 
-    return Container(); // Return empty container if not a valid category
+    return Container(); // Return jika tidak sesuai
   }
 
-  // Fungsi untuk membangun kategori radio
+  // Fungsi untuk membangun kategori size, sweetness, icecube
   Widget _buildRadioCategory(String categoryName, List choices, String label) {
-  String? selectedValue;
+    String? selectedValue;
 
-  if (categoryName == "Size") {
-    selectedValue = _selectedSize;
-  } else if (categoryName == "Sweetness") {
-    selectedValue = _selectedSweetness;
-  } else if (categoryName == "Ice Cube") {
-    selectedValue = _selectedIceCube;
+    if (categoryName == "Size") {
+      selectedValue = _selectedSize;
+    } else if (categoryName == "Sweetness") {
+      selectedValue = _selectedSweetness;
+    } else if (categoryName == "Ice Cube") {
+      selectedValue = _selectedIceCube;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "$categoryName",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+              ),
+               Text(
+      label == "Optional" ? "Wajib" : label,  
+      style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Poppins'),
+    ),
+            ],
+          ),
+          Column(
+            children: choices.map<Widget>((choice) {
+              return RadioListTile<String>(
+                title: Text(choice['name'], style: TextStyle(fontFamily: 'Poppins')),
+                subtitle: choice['additional_price'] != null
+                    ? Text('Rp ${choice['additional_price']}', style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontFamily: 'Poppins',
+                    ))
+                    : null,
+                value: choice['name'],
+                groupValue: selectedValue,
+                controlAffinity: ListTileControlAffinity.trailing,
+                onChanged: (value) {
+                  setState(() {
+                    if (categoryName == "Size") {
+                      _selectedSize = value;
+                    } else if (categoryName == "Sweetness") {
+                      _selectedSweetness = value;
+                    } else if (categoryName == "Ice Cube") {
+                      _selectedIceCube = value;
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 
-  // Hanya tampilkan label "Wajib" sekali untuk kategori yang sesuai
-  if (categoryName == "Size" || categoryName == "Sweetness" || categoryName == "Ice Cube") {
-    label = "Wajib";
-  } else {
-    label = "Optional";
-  }
-
-  return Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "$categoryName",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              label, // Menampilkan label sesuai kategori
-              style: TextStyle(fontSize: 11, color: Colors.black38),
-            ),
-          ],
-        ),
-        Column(
-          children: choices.map<Widget>((choice) {
-            return RadioListTile<String>(
-              title: Text(choice['name'],
-              style: TextStyle(
-      fontFamily: 'Poppins', 
-      fontSize: 14, 
-      fontWeight: FontWeight.w500,
-    ),
-    ),
-              subtitle: choice['additional_price'] != null
-                  ? Text('Rp ${choice['additional_price']}',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey,
-                  ),
-          )
-                  : null,
-              value: choice['name'],
-              groupValue: selectedValue,
-              controlAffinity: ListTileControlAffinity.trailing,
-              onChanged: (value) {
-                setState(() {
-                  if (categoryName == "Size") {
-                    _selectedSize = value;
-                  } else if (categoryName == "Sweetness") {
-                    _selectedSweetness = value;
-                  } else if (categoryName == "Ice Cube") {
-                    _selectedIceCube = value;
-                  }
-                });
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    ),
-  );
-}
-
-
-  // Fungsi untuk membangun kategori checkbox
+  // Fungsi untuk kategori topping dengan checkbox
   Widget _buildCheckboxCategory(String categoryName, List choices, String label) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -210,49 +303,31 @@ class _DetailPageState extends State<DetailPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-  Text(
-    "$categoryName",
-    style: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-      fontFamily: 'Poppins', 
-    ),
-  ),
-  Text(
-    label,
-    style: TextStyle(
-      fontSize: 11,
-      color: Colors.black38,
-      fontFamily: 'Poppins', 
-      fontWeight: FontWeight.w500, 
-    ),
-  ),
-],
-
+              Text(
+                "$categoryName",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+              ),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Poppins'),
+              ),
+            ],
           ),
           Column(
             children: choices.map<Widget>((choice) {
               return CheckboxListTile(
-                title: Text(choice['name'],
-                style: TextStyle(
-      fontFamily: 'Poppins', 
-      fontSize: 14, 
-      fontWeight: FontWeight.w500, 
-    ),),
+                title: Text(choice['name'], style: TextStyle(fontFamily: 'Poppins')),
                 subtitle: choice['additional_price'] != null
-                    ? Text('Rp ${choice['additional_price']}',
-                    style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey,
-                  ),)
+                    ? Text('Rp ${choice['additional_price']}', style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontFamily: 'Poppins',
+                    ))
                     : null,
                 value: _selectedToppings.contains(choice['name']),
-                controlAffinity: ListTileControlAffinity.trailing,
-                onChanged: (bool? value) {
+                onChanged: (bool? selected) {
                   setState(() {
-                    if (value == true) {
+                    if (selected == true) {
                       _selectedToppings.add(choice['name']);
                     } else {
                       _selectedToppings.remove(choice['name']);

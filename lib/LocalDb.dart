@@ -47,6 +47,39 @@ class LocalDatabase {
           FOREIGN KEY (category_id) REFERENCES option_categories (id) ON DELETE CASCADE
         )
       ''');
+      
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          order_date TEXT NOT NULL,         -- tanggal pesanan
+          receipt_number TEXT NOT NULL,     -- nomor tanda terima
+          order_id INTEGER NOT NULL,        -- ID pesanan
+          bill_name TEXT NOT NULL,          -- nama tagihan
+          collected_by TEXT NOT NULL,       -- pengumpul (cashier)
+          payment_method TEXT NOT NULL,     -- metode pembayaran (cash, qris, debit)
+          channel TEXT NOT NULL,            -- saluran pesanan (dine in, takeaway)
+          sub_total INTEGER NOT NULL,       -- subtotal harga (dalam format Rupiah)
+          tax INTEGER NOT NULL,             -- pajak 5%
+          service_charge INTEGER NOT NULL,  -- biaya layanan 10%
+          total_price INTEGER NOT NULL      -- total harga setelah pajak dan biaya layanan
+          phone_number TEXT,
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_name TEXT NOT NULL,       -- nama produk
+          category TEXT NOT NULL,           -- kategori produk
+          price INTEGER NOT NULL,           -- harga produk (dalam format Rupiah)
+          description TEXT,                 -- deskripsi produk
+          image_path TEXT                   -- jalur gambar produk
+        )
+      ''');
+
+
+
+
     } catch (e) {
       debugPrint("Error creating tables: $e");
       rethrow;
