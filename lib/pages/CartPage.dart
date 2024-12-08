@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Package untuk format Rupiah
+import 'package:intl/intl.dart';
+import 'package:posproject/components/CardOrderItem.dart'; // Package untuk format Rupiah
 
-// Halaman CartPage
 class CartPage extends StatefulWidget {
   @override
   _CartPageState createState() => _CartPageState();
@@ -14,6 +14,8 @@ class _CartPageState extends State<CartPage> {
   String promoCode = ''; // Menyimpan kode promo yang dimasukkan pengguna
   int discount = 0; // Nilai diskon yang diterapkan setelah validasi kode promo
   bool isPromoValid = false; // Status apakah kode promo valid
+  String userName = ''; // Menyimpan nama pengguna
+  String userPhone = ''; // Menyimpan nomor telepon pengguna
 
   // Daftar kode promo yang valid
   final validPromoCodes = {
@@ -47,7 +49,7 @@ class _CartPageState extends State<CartPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Order', // Judul halaman
+          'Order',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.bold,
@@ -75,7 +77,7 @@ class _CartPageState extends State<CartPage> {
             Expanded(
               child: ListView(
                 children: [
-                  // Membuat item contoh
+                  CardOrderItem(name: 'caramel Cipi'),
                   _buildCartItem(
                     'Caramel Coffee',
                     'Large, 100% Ice, 60% Sugar',
@@ -83,31 +85,31 @@ class _CartPageState extends State<CartPage> {
                     '',
                   ),
                   SizedBox(height: 16),
-
                   _buildCartItem(
                     'French Fries',
                     '',
                     100000,
                     '',
                   ),
+                  SizedBox(height: 16),
+                  _buildUserInfoForm(), // Form untuk nama dan nomor telepon
+                  SizedBox(height: 16),
+                  _buildTaxAndServiceSelector(), // Pajak dan layanan
+                  SizedBox(height: 16),
+                  _buildPromoCodeField(), // Input kode promo
+                  SizedBox(height: 16),
+                  _buildOrderSummary(), // Ringkasan pesanan
+                  SizedBox(height: 16),
+                  _buildProcessTransactionButton(), // Tombol transaksi
                 ],
               ),
             ),
-            SizedBox(height: 16),
-            _buildTaxAndServiceSelector(), // Memilih pajak dan biaya layanan
-            SizedBox(height: 16),
-            _buildPromoCodeField(), // Input untuk kode promo
-            SizedBox(height: 16),
-            _buildOrderSummary(), // Menampilkan ringkasan pesanan
-            SizedBox(height: 16),
-            _buildProcessTransactionButton(), // Tombol untuk memproses transaksi
           ],
         ),
       ),
     );
   }
 
-  // Widget untuk menampilkan itemnya
   Widget _buildCartItem(
       String name, String details, int price, String imagePath) {
     return Row(
@@ -126,21 +128,21 @@ class _CartPageState extends State<CartPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name, // Nama item
+                name,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   fontFamily: 'Poppins',
                 ),
               ),
-              if (details.isNotEmpty) // Menampilkan detail jika ada
+              if (details.isNotEmpty)
                 Text(
                   details,
                   style: TextStyle(color: Colors.grey),
                 ),
               SizedBox(height: 8),
               Text(
-                _formatRupiah(price), // Menampilkan harga dalam format Rupiah
+                _formatRupiah(price),
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -150,7 +152,57 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // Widget untuk memilih pajak dan biaya layanan
+  // Widget untuk form input nama dan nomor telepon
+  Widget _buildUserInfoForm() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Full Name',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        SizedBox(height: 8),
+        TextField(
+          onChanged: (value) {
+            setState(() {
+              userName = value;
+            });
+          },
+          decoration: InputDecoration(
+            labelText: 'Enter Full Name',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Nomor Telepon',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        SizedBox(height: 8),
+        TextField(
+          onChanged: (value) {
+            setState(() {
+              userPhone = value;
+            });
+          },
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: 'Masukkan Nomor Telepon',
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildTaxAndServiceSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,49 +268,37 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // Widget untuk input kode promo
   Widget _buildPromoCodeField() {
     return Row(
       children: [
         Expanded(
           child: TextField(
             onChanged: (value) {
-              promoCode = value; // Mengambil input kode promo
+              promoCode = value;
             },
             decoration: InputDecoration(
               labelText: 'Enter Promo Code',
-              labelStyle: TextStyle(
-                fontFamily: 'Poppins',
-              ),
               border: OutlineInputBorder(),
             ),
           ),
         ),
         SizedBox(width: 8),
-        // Tombol untuk menerapkan kode promo
         ElevatedButton(
           onPressed: _applyPromoCode,
-          child: Text(
-            'Apply',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.blue, // Warna latar belakang tombol
+            foregroundColor: Colors.white, // Warna teks
           ),
+          child: Text('Apply'),
         ),
       ],
     );
   }
 
-  // Widget untuk menampilkan ringkasan pesanan
   Widget _buildOrderSummary() {
-    int tax = (subtotal * taxRate).round(); // Menghitung pajak
-    int service = (subtotal * serviceRate).round(); // Menghitung biaya layanan
-    int total = subtotal + tax + service - discount; // Total yang harus dibayar
+    int tax = (subtotal * taxRate).round();
+    int service = (subtotal * serviceRate).round();
+    int total = subtotal + tax + service - discount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,11 +308,9 @@ class _CartPageState extends State<CartPage> {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
-            fontFamily: 'Poppins',
           ),
         ),
         SizedBox(height: 8),
-        // Menampilkan subtotal
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -280,7 +318,6 @@ class _CartPageState extends State<CartPage> {
             Text(_formatRupiah(subtotal)),
           ],
         ),
-        // Menampilkan pajak
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -288,7 +325,6 @@ class _CartPageState extends State<CartPage> {
             Text(_formatRupiah(tax)),
           ],
         ),
-        // Menampilkan biaya layanan
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -296,7 +332,7 @@ class _CartPageState extends State<CartPage> {
             Text(_formatRupiah(service)),
           ],
         ),
-        if (isPromoValid) // Menampilkan diskon jika kode promo valid
+        if (isPromoValid)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -304,24 +340,17 @@ class _CartPageState extends State<CartPage> {
               Text('-${_formatRupiah(discount)}'),
             ],
           ),
-        SizedBox(height: 16),
-        // Menampilkan total harga
+        SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Total',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             Text(
               _formatRupiah(total),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -329,25 +358,21 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // Widget untuk tombol pemrosesan transaksi
   Widget _buildProcessTransactionButton() {
-    return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          // Navigasi atau proses pemesanan setelah tombol ditekan
-        },
-        child: Text(
-          'Process Transaction',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    return ElevatedButton(
+      onPressed: () {
+        // Logika untuk memproses transaksi
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transaction Processed'),
           ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-        ),
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
+      child: Text('Process Transaction'),
     );
   }
 }

@@ -7,7 +7,7 @@ class LocalDatabase {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initializeDB('Local.db');
+    _database = await _initializeDB('Detail.db');
     return _database!;
   }
 
@@ -30,7 +30,7 @@ class LocalDatabase {
   Future<void> _createDB(Database db, int version) async {
     try {
       // Create table for categories
-      await db.execute(''' 
+      await db.execute('''
         CREATE TABLE IF NOT EXISTS option_categories (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL
@@ -38,7 +38,7 @@ class LocalDatabase {
       ''');
 
       // Create table for choices
-      await db.execute(''' 
+      await db.execute('''
         CREATE TABLE IF NOT EXISTS option_choices (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           category_id INTEGER NOT NULL,
@@ -47,39 +47,6 @@ class LocalDatabase {
           FOREIGN KEY (category_id) REFERENCES option_categories (id) ON DELETE CASCADE
         )
       ''');
-      
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS orders (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          order_date TEXT NOT NULL,         -- tanggal pesanan
-          receipt_number TEXT NOT NULL,     -- nomor tanda terima
-          order_id INTEGER NOT NULL,        -- ID pesanan
-          bill_name TEXT NOT NULL,          -- nama tagihan
-          collected_by TEXT NOT NULL,       -- pengumpul (cashier)
-          payment_method TEXT NOT NULL,     -- metode pembayaran (cash, qris, debit)
-          channel TEXT NOT NULL,            -- saluran pesanan (dine in, takeaway)
-          sub_total INTEGER NOT NULL,       -- subtotal harga (dalam format Rupiah)
-          tax INTEGER NOT NULL,             -- pajak 5%
-          service_charge INTEGER NOT NULL,  -- biaya layanan 10%
-          total_price INTEGER NOT NULL      -- total harga setelah pajak dan biaya layanan
-          phone_number TEXT,
-        )
-      ''');
-
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS products (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          product_name TEXT NOT NULL,       -- nama produk
-          category TEXT NOT NULL,           -- kategori produk
-          price INTEGER NOT NULL,           -- harga produk (dalam format Rupiah)
-          description TEXT,                 -- deskripsi produk
-          image_path TEXT                   -- jalur gambar produk
-        )
-      ''');
-
-
-
-
     } catch (e) {
       debugPrint("Error creating tables: $e");
       rethrow;
@@ -90,7 +57,6 @@ class LocalDatabase {
   Future<void> addInitialData() async {
     final db = await database;
 
-    // Data for categories
     final categories = [
       'Size',
       'Sweetness',
@@ -109,12 +75,12 @@ class LocalDatabase {
       categoryIds[category] = id;
     }
 
-    // Data for choices
     final choices = [
       {'category': 'Size', 'name': 'Regular Ice', 'additional_price': 0},
       {'category': 'Size', 'name': 'Large Ice', 'additional_price': 6000},
       {'category': 'Sweetness', 'name': 'Normal Sweet', 'additional_price': 0},
       {'category': 'Sweetness', 'name': 'Less Sweet', 'additional_price': 0},
+      {'category': 'Sweetness', 'name': 'No Sweet', 'additional_price': 0},
       {'category': 'Ice Cube', 'name': 'Normal Ice', 'additional_price': 0},
       {'category': 'Ice Cube', 'name': 'Less Ice', 'additional_price': 0},
       {'category': 'Ice Cube', 'name': 'More Ice', 'additional_price': 0},
@@ -137,7 +103,6 @@ class LocalDatabase {
             'name': choice['name'],
             'additional_price': choice['additional_price'],
           },
-          conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
     }
@@ -147,7 +112,8 @@ class LocalDatabase {
   Future<List<Map<String, dynamic>>> fetchOrderDetails() async {
     final db = await database;
     try {
-      final List<Map<String, dynamic>> categories = await db.query('option_categories');
+      final List<Map<String, dynamic>> categories =
+          await db.query('option_categories');
       List<Map<String, dynamic>> results = [];
 
       for (var category in categories) {
@@ -169,5 +135,82 @@ class LocalDatabase {
       debugPrint("Error fetching order details: $e");
       return [];
     }
+  }
+
+  /// Add a new category
+  Future<int> addCategory(String name) async {
+    final db = await database;
+    return await db.insert('option_categories', {'name': name});
+  }
+
+  /// Get all categories
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    final db = await database;
+    return await db.query('option_categories');
+  }
+
+  /// Update a category
+  Future<int> updateCategory(int id, String name) async {
+    final db = await database;
+    return await db.update(
+      'option_categories',
+      {'name': name},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Delete a category
+  Future<int> deleteCategory(int id) async {
+    final db = await database;
+    return await db.delete(
+      'option_categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Add a new choice
+  Future<int> addChoice(int categoryId, String name, int additionalPrice) async {
+    final db = await database;
+    return await db.insert('option_choices', {
+      'category_id': categoryId,
+      'name': name,
+      'additional_price': additionalPrice,
+    });
+  }
+
+  /// Get all choices
+  Future<List<Map<String, dynamic>>> getChoices(int categoryId) async {
+    final db = await database;
+    return await db.query(
+      'option_choices',
+      where: 'category_id = ?',
+      whereArgs: [categoryId],
+    );
+  }
+
+  /// Update a choice
+  Future<int> updateChoice(int id, String name, int additionalPrice) async {
+    final db = await database;
+    return await db.update(
+      'option_choices',
+      {
+        'name': name,
+        'additional_price': additionalPrice,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Delete a choice
+  Future<int> deleteChoice(int id) async {
+    final db = await database;
+    return await db.delete(
+      'option_choices',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

@@ -5,7 +5,7 @@ import 'package:posproject/pages/detailpage.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final localDatabase = LocalDatabase();
-  await localDatabase.addInitialData();  // Insert initial data into DB
+  await localDatabase.addInitialData();
   runApp(MyApp());
 }
 
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: DetailPage(),  // Set DetailPage as the initial page
+      home: DetailPage(),
     );
   }
 }

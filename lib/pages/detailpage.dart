@@ -28,7 +28,9 @@ class _DetailPageState extends State<DetailPage> {
 
   // Fungsi untuk memeriksa apakah semua opsi wajib sudah dipilih
   bool _areMandatoryOptionsSelected() {
-    return _selectedSize != null && _selectedSweetness != null && _selectedIceCube != null;
+    return _selectedSize != null &&
+        _selectedSweetness != null &&
+        _selectedIceCube != null;
   }
 
   @override
@@ -44,7 +46,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue, // Mengatur background menjadi biru
+        backgroundColor: Colors.blue,
         actions: [
           IconButton(
             icon: Icon(Icons.shopping_cart),
@@ -96,12 +98,15 @@ class _DetailPageState extends State<DetailPage> {
                     final category = groupedCategories[index];
                     final categoryName = category['category'];
                     final choices = category['choices'];
-                    final isMandatory = category['mandatory'] ?? false;
 
-                    // Label untuk wajib dan opsionalnya
-                    String label = isMandatory ? "Wajib" : "Optional";
+                    // Semua kategori diubah menjadi "Required"
+                    String label = "Required";
 
-                    // Fungsi buildCategory untuk menghindari perulangan
+                    // Ubah label menjadi "Optional" untuk kategori Topping
+                    if (categoryName == "Topping") {
+                      label = "Optional";
+                    }
+
                     return _buildCategory(categoryName, choices, label);
                   },
                 ),
@@ -118,69 +123,74 @@ class _DetailPageState extends State<DetailPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Quantity section
-                    Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.remove, color: Colors.white),
-                            onPressed: () {
-                              setState(() {
-                                if (_quantity > 1) {
-                                  _quantity--;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          '$_quantity',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        // Tombol +
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.add, color: Colors.white),
-                            onPressed: () {
-                              setState(() {
-                                _quantity++;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
+                    StatefulBuilder(
+                      builder: (context, setStateQuantity) {
+                        return Row(
+                          children: [
+                            // Tombol -
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.remove, color: Colors.white),
+                                onPressed: () {
+                                  setStateQuantity(() {
+                                    if (_quantity > 1) {
+                                      _quantity--;
+                                    }
+                                  });
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              '$_quantity',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            // Tombol +
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: Icon(Icons.add, color: Colors.white),
+                                onPressed: () {
+                                  setStateQuantity(() {
+                                    _quantity++;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    // Tombol harga dengan warna yang berubah berdasarkan status pilihan
+                    // Tombol harga
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _areMandatoryOptionsSelected()
                             ? Colors.blue
-                            : Colors.grey, // Ganti warna tombol berdasarkan status
+                            : Colors.grey,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       onPressed: _areMandatoryOptionsSelected()
                           ? () {
-                              // Penempatan fungsi totalnya nanti
+                              // Fungsi total akan ditambahkan nanti
                             }
-                          : null, // Tombol tidak bisa ditekan jika belum lengkap
+                          : null,
                       child: Text(
-                        'Rp 24.000', // Contoh harga
+                        'Rp 24.000',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -199,14 +209,14 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   // Fungsi untuk mengelompokkan kategori
-  List<Map<String, dynamic>> groupCategories(List<Map<String, dynamic>> orderDetails) {
+  List<Map<String, dynamic>> groupCategories(
+      List<Map<String, dynamic>> orderDetails) {
     Set<String> processedCategories = Set();
     List<Map<String, dynamic>> groupedCategories = [];
 
     for (var category in orderDetails) {
       final categoryName = category['category'];
 
-      // Jika kategori belum diproses, tambahkan ke dalam daftar
       if (!processedCategories.contains(categoryName)) {
         processedCategories.add(categoryName);
         groupedCategories.add(category);
@@ -227,7 +237,7 @@ class _DetailPageState extends State<DetailPage> {
       return _buildCheckboxCategory(categoryName, choices, label);
     }
 
-    return Container(); // Return jika tidak sesuai
+    return Container();
   }
 
   // Fungsi untuk membangun kategori size, sweetness, icecube
@@ -252,24 +262,29 @@ class _DetailPageState extends State<DetailPage> {
             children: [
               Text(
                 "$categoryName",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins'),
               ),
-               Text(
-      label == "Optional" ? "Wajib" : label,  
-      style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Poppins'),
-    ),
+              Text(
+                label,
+                style: TextStyle(
+                    fontSize: 11, color: Colors.black38, fontFamily: 'Poppins'),
+              ),
             ],
           ),
           Column(
             children: choices.map<Widget>((choice) {
               return RadioListTile<String>(
-                title: Text(choice['name'], style: TextStyle(fontFamily: 'Poppins')),
+                title: Text(choice['name'],
+                    style: TextStyle(fontFamily: 'Poppins')),
                 subtitle: choice['additional_price'] != null
-                    ? Text('Rp ${choice['additional_price']}', style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontFamily: 'Poppins',
-                    ))
+                    ? Text('Rp ${choice['additional_price']}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontFamily: 'Poppins'))
                     : null,
                 value: choice['name'],
                 groupValue: selectedValue,
@@ -294,7 +309,8 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   // Fungsi untuk kategori topping dengan checkbox
-  Widget _buildCheckboxCategory(String categoryName, List choices, String label) {
+  Widget _buildCheckboxCategory(
+      String categoryName, List choices, String label) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
@@ -305,29 +321,35 @@ class _DetailPageState extends State<DetailPage> {
             children: [
               Text(
                 "$categoryName",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins'),
               ),
               Text(
                 label,
-                style: TextStyle(fontSize: 11, color: Colors.black38, fontFamily: 'Poppins'),
+                style: TextStyle(
+                    fontSize: 11, color: Colors.black38, fontFamily: 'Poppins'),
               ),
             ],
           ),
           Column(
             children: choices.map<Widget>((choice) {
               return CheckboxListTile(
-                title: Text(choice['name'], style: TextStyle(fontFamily: 'Poppins')),
+                title: Text(choice['name'],
+                    style: TextStyle(fontFamily: 'Poppins')),
                 subtitle: choice['additional_price'] != null
-                    ? Text('Rp ${choice['additional_price']}', style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontFamily: 'Poppins',
-                    ))
+                    ? Text('Rp ${choice['additional_price']}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontFamily: 'Poppins'))
                     : null,
                 value: _selectedToppings.contains(choice['name']),
-                onChanged: (bool? selected) {
+                controlAffinity: ListTileControlAffinity.trailing,
+                onChanged: (bool? value) {
                   setState(() {
-                    if (selected == true) {
+                    if (value == true) {
                       _selectedToppings.add(choice['name']);
                     } else {
                       _selectedToppings.remove(choice['name']);
